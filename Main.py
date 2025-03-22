@@ -20,9 +20,9 @@ if uploaded_file is not None:
     xls = pd.ExcelFile(uploaded_file)
 elif st.checkbox("Use sample menu"):
     # 👇 Replace with your actual file path
-    fallback_path = r"C:\Ronita-Work\AI-Learnings\Code\1.MenuItemGenerator\MenuItems_History.xlsx"
+    #fallback_path = r"C:\Ronita-Work\AI-Learnings\Code\1.MenuItemGenerator\MenuItems_History.xlsx"
     try:
-        xls = pd.ExcelFile(fallback_path)
+        xls = pd.ExcelFile("MenuItems_History.xlsx")
         #st.success("✅ Loaded sample menu successfully.")
     except FileNotFoundError:
         st.error("❌ Sample file not found.")
