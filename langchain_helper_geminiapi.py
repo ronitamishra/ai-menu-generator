@@ -14,7 +14,7 @@ def generate_menu_item(menu, preference):
 
     Based on the past 2 weeks of menus and dietary preferences, generate a weekly meal plan (7 days).
     Each day should include Breakfast, Lunch, and Dinner.
-    Avoid repeating dishes from the past menus.
+    Take the mean preferences inspiration from the past menus.
     Respect Veg/Non-Veg preferences and do not include red meat.
 
     Past Menu:
