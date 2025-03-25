@@ -32,29 +32,33 @@ def format_llm_response(llm_response):
     except Exception as e:
         st.error(f"❌ Error parsing LLM response to table: {e}")
         return pd.DataFrame()
-# ─────────────────────────────────────────────────────────────
-tab1, tab2 = st.tabs([
-    "Generate Menu from Historical Data",
-    "Generate Menu by Cuisine & Preference"
-])
 
+# ─────────────────────────────────────────────────────────────
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "Past Meals to Plan",
+    "Menu by Taste & Type",
+    "Mood-Based Menu",
+    "Fridge to Food Menu",
+    "Weekly Food Insight"
+])
 
 
 # ───────────────────────────── Tab 1
 with tab1:
+    st.subheader("📅 Past Meals to Plan")
     if st.session_state.last_tab != "tab1":
         st.session_state.custom_menu = ""
         st.session_state.grocery_list = ""
         st.session_state.last_tab = "tab1"
 
-    menu_option = st.radio("Choose an Option", [
-        "Upload an excel with data",
-        "Manually enter menu & preferences"
+    menu_option = st.radio("🧭 How do you want to recall your menu?", [
+        "Import meal history (Excel)",
+        "Type in your meals manually"
     ], horizontal=True)
 
     xls = None
 
-    if menu_option == "Upload an excel with data":
+    if menu_option == "Import meal history (Excel)":
         st.session_state.custom_menu =""
         with open("MenuItems_History.xlsx", "rb") as f:
             sample_data = f.read()
@@ -72,7 +76,7 @@ with tab1:
     #     except FileNotFoundError:
     #         st.error("❌ Sample file not found.")
 
-    elif menu_option == "Manually enter menu & preferences":
+    elif menu_option == "Type in your meals manually":
         st.session_state.custom_menu = ""
         st.markdown("### ✍️ Enter Menu History")
 
@@ -91,7 +95,7 @@ with tab1:
             key="menu_editor"
         )
 
-        st.markdown("### 👥 Enter Family Preferences")
+        st.markdown("### 👥 Enter Preferences")
 
         if "prefs_input_df" not in st.session_state:
             st.session_state.prefs_input_df = pd.DataFrame({
@@ -150,7 +154,7 @@ with tab1:
 
 # 🔸 Tab 2: Generate Based on Cuisine + Prefs
 with tab2:
-    # st.header("🍽️ Generate menu by cuisine & preference")
+    st.header("🍛 Menu by Taste & Type")
 
     if "custom_menu_ready_tab2" not in st.session_state:
         st.session_state.custom_menu_ready_tab2 = False
@@ -177,7 +181,6 @@ with tab2:
         )
 
     # Generate Menu / Grocery Buttons
-
     if st.button("🔮 Generate Custom Menu"):
         with st.spinner("Generating..."):
             if preference == "Both":
@@ -196,20 +199,57 @@ with tab2:
                 st.download_button("💾 Download Menu as CSV", data=csv, file_name="menu.csv", mime="text/csv",
                                    key="download_custom_menu_csv")
 
-    # # display grocery list
-    # if st.button("🛒 Generate Grocery List"):
-    #     print("Inside Grocery Button Clicked")
-    #     with st.spinner("Working..."):
-    #         grocery_list = langchain_helper_geminiapi.generate_grocery_list(st.session_state.custom_menu)
-    #         print("Inside Grocery Button Clicked {grocery_list}")
-    #         st.session_state.grocery_list = grocery_list.strip()
-    #
-    #
-    #
-    # # --- Display grocery list if available
-    # if st.session_state.grocery_list:
-    #     with st.expander("🧾 Generated Grocery List", expanded=False):
-    #         st.text_area("Grocery List", st.session_state.grocery_list, height=300)
-    #         txt = st.session_state.grocery_list.encode('utf-8')
-    #         st.download_button("💾 Download Grocery List as TXT", data=txt, file_name="grocery_list.txt",
-    #                            mime="text/plain", key="download_grocery_csv")
+# ───────────────────────────── Tab 3:  Mood-Based Menu Generator
+with tab3:
+    st.subheader("🌤️ Mood-Based Menu Generator")
+    if not st.session_state.get("is_pro_user", True):
+        st.warning("🔒 This feature is available for Pro users only.")
+        st.stop()
+
+    mood = st.text_input("How are you feeling today?", placeholder="e.g., tired, happy, bloated, energetic")
+    dietary_preference = st.selectbox("Choose dietary preference",
+                                      ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Any"])
+
+    if st.button("🔮 Generate Menu"):
+        with st.spinner("Thinking like a foodie..."):
+            result = langchain_helper_geminiapi.generate_mode_based_menu(mood, dietary_preference).strip()
+            df = format_llm_response(result)
+            st.dataframe(df)
+            csv = df.to_csv(index=False).encode("utf-8")
+            st.download_button("💾 Download Menu as CSV", data=csv, file_name="menu.csv", mime="text/csv",
+                               key="download_mode_based_menu_csv")
+
+# ───────────────────────────── Tab 4: Fridge to Food
+with tab4:
+    st.subheader("📷 Fridge-to-Food Meal Suggestions")
+
+    if not st.session_state.get("is_pro_user", True):
+        st.warning("🔒 This feature is available for Pro users only.")
+        st.stop()
+
+    ingredients = st.text_area("What ingredients do you have?", placeholder="e.g., 2 eggs, spinach, onion, tomato")
+    dietary_preference = st.selectbox("Choose dietary preference", ["Vegetarian", "Non-Vegetarian", "Vegan", "Any"])
+
+    if st.button("🍳 Suggest Meals"):
+        with st.spinner("Cooking up ideas..."):
+            result = langchain_helper_geminiapi.generate_fridge_to_food_menu(ingredients, dietary_preference).strip()
+            df = format_llm_response(result)
+            st.dataframe(df)
+            csv = df.to_csv(index=False).encode("utf-8")
+            st.download_button("💾 Download Menu as CSV", data=csv, file_name="menu.csv", mime="text/csv",
+                               key="download_fridge_to_food_based_menu_csv")
+
+# ───────────────────────────── Tab 5: Weekly Food Insight
+with tab5:
+    st.subheader("🧠 Weekly Food Insights")
+
+    if not st.session_state.get("is_pro_user", True):
+        st.warning("🔒 This feature is available for Pro users only.")
+        st.stop()
+
+    user_history_input = st.text_area("Paste your weekly menu (raw or table format)")
+
+    if st.button("🔍 Analyze"):
+        with st.spinner("Analyzing patterns..."):
+            result = langchain_helper_geminiapi.generate_weekly_food_insights(user_history_input).strip()
+            st.markdown(result)
