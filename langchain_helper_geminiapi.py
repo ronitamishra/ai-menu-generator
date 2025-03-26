@@ -9,43 +9,12 @@ import prompt_template
 genai.configure(api_key="AIzaSyCafzEwpRz4NhPcUaGFIRIfLGbEuOHv5Qw")  # Or load from env
 
 def generate_menu_item(menu, preference):
-    prompt = f"""
-    You are a helpful AI chef assistant.
+    prompt = prompt_template.get_historical_based_menu_prompt(menu, preference)
+    return run_gemini_api(prompt)
 
-    Based on the past 2 weeks of menus and dietary preferences, generate a weekly meal plan (7 days). Don't include 
-    preamble. 
-    Each day should include Breakfast, Lunch, and Dinner.
-    Avoid repeating dishes from the past menus.
-    Respect Veg/Non-Veg preferences and do not include red meat.
 
-    Past Menu:
-    {menu}
-
-    Preferences:
-    {preference}
-    
-    Format:
-    Day | MealType | Dish | Type (Veg/Non-Veg)
-    """
-
-    model = genai.GenerativeModel("gemini-1.5-flash")  # or gemini-1.5-pro
-    response = model.generate_content(prompt)
-
-    return response.text
-
-def generate_custom_menu(cuisine, preference):
-    prompt = f"""
-    You are a helpful AI chef assistant.
-    
-    Generate a weekly {preference.lower()} menu for {cuisine} cuisine. Don't include 
-    preamble. 
-    It should include Breakfast, Lunch, and Dinner.
-    Respect preferences and do not include red meat.
-      
-    Format:
-    Day | MealType | Dish | Type (Veg/Non-Veg) 
-    """
-    print(prompt)
+def generate_custom_menu(cuisine, preference, meal):
+    prompt = prompt_template.get_cuisine_preference_based_menu_prompt(cuisine, preference, meal)
     return run_gemini_api(prompt)
 
 def run_gemini_api(prompt):
@@ -60,12 +29,12 @@ def generate_grocery_list(selected_menu):
     """
     return run_gemini_api(prompt)
 
-def generate_mode_based_menu(mood, dietary_preference):
-    prompt = prompt_template.get_mode_based_menu_prompt(mood,dietary_preference)
+def generate_mode_based_menu(mood, dietary_preference, meal):
+    prompt = prompt_template.get_mode_based_menu_prompt(mood,dietary_preference, meal)
     return run_gemini_api(prompt)
 
-def generate_fridge_to_food_menu(ingredients, dietary_preference):
-    prompt = prompt_template.get_mode_based_menu_prompt(ingredients,dietary_preference)
+def generate_fridge_to_food_menu(ingredients, dietary_preference, meal):
+    prompt = prompt_template.get_mode_based_menu_prompt(ingredients,dietary_preference, meal)
     return run_gemini_api(prompt)
 
 def generate_weekly_food_insights(user_history_input):
