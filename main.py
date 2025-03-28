@@ -2,10 +2,10 @@ from io import StringIO
 import streamlit as st
 import pandas as pd
 from sqlalchemy.util.preloaded import import_prefix
-
 import langchain_helper_geminiapi
 import base64
 import image_generator_helper
+import re
 
 st.set_page_config(page_title="AI Menu Generator", layout="centered")
 st.title("🍽️ Food Chart")
@@ -169,27 +169,34 @@ with tab2:
         st.session_state.custom_menu_ready_tab2 = False
         st.session_state.last_tab = "tab2"
 
-    # Input section
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        cuisine = st.radio(
-            "Choose a cuisine",
-            ["Indian", "Italian", "Chinese", "Continental"],
-            horizontal=True
-        )
-        meal = st.radio(
-            "Choose meal type",
-            ["Breakfast", "Lunch", "Dinner"],
-            horizontal=True
-        )
-    with col2:
-        preference = st.radio(
-            "Choose preference",
-            ["Vegetarian", "Non-Vegetarian", "Both"]
-        )
+    llm_cuisines = langchain_helper_geminiapi.generate_list_of_cuisine()
+
+    if "cuisines" not in st.session_state:
+        st.session_state.cuisines  = [
+            line.strip() for line in llm_cuisines.splitlines()
+            if line.strip() and "Cuisine" not in line
+        ]
+
+
+    cuisine = st.selectbox(
+        "Choose a cuisine",
+        st.session_state.cuisines,
+        key="cuisine_select"  # ✅ Unique key
+    )
+    meal = st.selectbox(
+        "Choose meal type",
+        ["Breakfast", "Lunch", "Dinner"],
+        key="meal_select"  # ✅ Unique key
+    )
+
+    preference = st.selectbox(
+        "Choose preference",
+        ["Vegetarian", "Non-Vegetarian", "Both"],
+        key="preference_select"  # ✅ Unique key
+    )
 
     # Generate Menu / Grocery Buttons
-    if st.button("🍳 Suggest Preferred Meals"):
+    if st.button("🍳 Suggest Meals", key="preferred_meals_btn"):
         with st.spinner("Generating..."):
             if preference == "Both":
                 preference = "Vegetarian & Non-Vegetarian"
@@ -202,10 +209,11 @@ with tab2:
             if st.session_state.custom_menu:
                 with st.expander("🍲 Generated Meals", expanded=True):
                     df = format_llm_response(st.session_state.custom_menu)
+
                     for idx, row in df.iterrows():
                         meal = row.get("Meal") or row.get("Dish") or row.iloc[0]
                         st.subheader(f"🍽️ {meal}")
-                        image_url = image_generator_helper.fetch_meal_image(meal)
+                        image_url = image_generator_helper.fetch_meal_image(meal, cuisine)
                         if image_url:
                             # Display image with fixed width and optional styling
                             st.markdown(
@@ -221,16 +229,21 @@ with tab2:
 
                         # Display recipe link if available
                         recipe_val = row.get("Recipe") or ""
-                        if recipe_val.startswith("[http://") or recipe_val.startswith("[https://"):
-                            st.markdown(f"[📖 View Recipe]({recipe_val})")
-                        elif len(recipe_val.strip()) > 0:
+
+                        # Extract the first valid URL from markdown-style link
+                        match = re.search(r"\((https?://[^\)]+)\)", recipe_val)
+                        if match:
+                            url = match.group(1)
+                            st.markdown(f"[📖 View Recipe]({url})")
+                        elif recipe_val.strip():
                             st.markdown("📖 *Recipe available in details below*")
                         else:
                             st.markdown("❌ *No recipe link provided*")
 
                         # Show the rest of the row excluding the full recipe text
-                        display_row = row.drop(labels=["RecipeLink"]) if "RecipeLink" in row else row
+                        display_row = row.drop(labels=["Recipe"]) if "Recipe" in row else row
                         st.write(display_row.to_frame().T)
+
 
                     # st.dataframe(df)
                     csv = df.to_csv(index=False).encode("utf-8")

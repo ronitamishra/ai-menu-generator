@@ -1,12 +1,20 @@
 import google.generativeai as genai
 import pandas as pd
 import os
+
+from click import prompt
+
 import prompt_template
+from dotenv import load_dotenv
 
 # Load environment variables
+load_dotenv("secret.env")
 
 # Set your API Key
-genai.configure(api_key="AIzaSyCafzEwpRz4NhPcUaGFIRIfLGbEuOHv5Qw")  # Or load from env
+api_key = os.getenv("GOOGLE_API_KEY")
+# ✅ Sanity check (just for debugging)
+#print("API Key Loaded:", "✅" if api_key else "❌ NOT FOUND")
+genai.configure(api_key=api_key)  # Or load from env
 
 def generate_menu_item(menu, preference):
     prompt = prompt_template.get_historical_based_menu_prompt(menu, preference)
@@ -41,7 +49,9 @@ def generate_weekly_food_insights(user_history_input):
     prompt = prompt_template.get_weekly_food_insights_prompt(user_history_input)
     return run_gemini_api(prompt)
 
-
+def generate_list_of_cuisine():
+    prompt = prompt_template.get_list_of_cuisine_prompt()
+    return run_gemini_api(prompt)
 
 if __name__ == "__main__":
     # Upload Excel

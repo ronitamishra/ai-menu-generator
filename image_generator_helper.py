@@ -1,15 +1,21 @@
 import requests
 import streamlit as st
+from dotenv import load_dotenv
+import os
 
-PEXELS_API_KEY = "ezl3QxOrKb3kL6yViQt5carlzYeS9HeDTb64VUfoeZYZHN97fidfoB18"  # 🔁 Replace with your actual key
+# Load environment variables
+load_dotenv("secret.env")
+
+# Set your API Key
+api_key = os.getenv("PEXELS_API_KEY")
 
 @st.cache_data(show_spinner=False)
-def fetch_meal_image(meal_name):
+def fetch_meal_image(meal_name, cuisine):
     headers = {
-        "Authorization": PEXELS_API_KEY
+        "Authorization": api_key
     }
     params = {
-        "query": meal_name + " food",
+        "query": str(meal_name) + cuisine + "food",
         "per_page": 1
     }
     response = requests.get("https://api.pexels.com/v1/search", headers=headers, params=params)
