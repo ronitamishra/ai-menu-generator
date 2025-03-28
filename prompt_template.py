@@ -30,10 +30,11 @@ def get_cuisine_preference_based_menu_prompt(cuisine, preference, meal):
         Generate a {preference.lower()} {meal} for {cuisine} cuisine. Don't include 
         preamble. 
         It should include {meal} as per the selection.
+        Each dish should be realistic, reflect the cuisine, and include an actual **online recipe link** (if known). Use links from reputable sources.
         Respect preferences and do not include red meat.
 
         Format:
-        MealType | Dish | Type (Veg/Non-Veg) | Recipe Link
+        MealType | Dish | Type (Veg/Non-Veg) | Recipe
         
         """
     return prompt
@@ -75,5 +76,17 @@ def get_weekly_food_insights_prompt(user_history_input):
 
         Your response should be bullet points summarizing the user’s diet patterns and smart tips.
         Your response should be within 2-3 sentences. 
+        """
+    return prompt
+
+
+def get_list_of_cuisine_prompt():
+    prompt = f"""
+        You're a helpful meal planner AI. Provide a list of cuisine available in the world.
+        Avoid repeating cuisines. 
+        Don't include preamble. 
+        
+        Output Format:
+        Cuisine
         """
     return prompt
